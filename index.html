@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
 
@@ -23,11 +23,19 @@
             overflow: hidden;
         }
 
+        h2 {
+            font-size: 22px;
+            margin-top: 10px;
+            color: steelblue;
+            text-align: center;
+        }
+
         canvas {
             border: 2px solid steelblue;
             width: 100vw;
-            height: calc(100vh - 60px); /* Adjust height to take full screen minus toolbox */
+            height: calc(100vh - 100px); /* Adjust height to take full screen minus toolbox */
             display: block;
+            touch-action: none; /* Prevent scrolling while drawing */
         }
 
         .toolbox {
@@ -50,21 +58,29 @@
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            height: 50px;
-            width: 50px;
-            margin: 0.25rem;
-            padding: 0.25rem;
+            height: 55px; /* Increased size for better mobile usability */
+            width: 55px;
+            margin: 0.3rem;
+            padding: 0.3rem;
             cursor: pointer;
+            border-radius: 5px;
         }
 
         .toolbox > *:last-child {
             margin-left: auto;
         }
+
+        input[type="color"] {
+            height: 50px;
+            width: 50px;
+            padding: 5px;
+            border-radius: 50%;
+        }
     </style>
-    <title>Drawing App</title>
+    <title>Drawing App (Mobile & Desktop)</title>
 </head>
 <body>
-    <h2 style="color: steelblue;">Scribble what's on your mind !!!</h2>
+    <h2>Scribble what's on your mind !!!</h2>
     <canvas id="canvas"></canvas>
     <div class="toolbox">
         <button id="decrease">-</button>
@@ -75,26 +91,26 @@
     </div>
     <script>
         const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
         const increaseButton = document.getElementById("increase");
         const decreaseButton = document.getElementById("decrease");
         const sizeElement = document.getElementById("size");
         const colorElement = document.getElementById("color");
         const clearElement = document.getElementById("clear");
-        const ctx = canvas.getContext("2d");
 
         let size = 5;
         let color = "black";
-        let x;
-        let y;
+        let x, y;
         let isPressed = false;
 
-        // Resize canvas dynamically to fit screen
+        // Resize canvas to fit screen
         const resizeCanvas = () => {
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 60; // Adjust for toolbox height
+            canvas.height = window.innerHeight - 100; // Adjust for toolbox height
         };
         window.addEventListener("resize", resizeCanvas);
-        resizeCanvas(); // Call initially to set size
+        resizeCanvas(); // Call initially
 
         const drawCircle = (x, y) => {
             ctx.beginPath();
@@ -114,6 +130,7 @@
 
         const updateSizeOnScreen = () => (sizeElement.innerText = size);
 
+        // Desktop Mouse Events
         canvas.addEventListener("mousedown", (e) => {
             isPressed = true;
             x = e.offsetX;
@@ -137,6 +154,35 @@
             }
         });
 
+        // Mobile Touch Events
+        canvas.addEventListener("touchstart", (e) => {
+            isPressed = true;
+            let touch = e.touches[0];
+            let rect = canvas.getBoundingClientRect();
+            x = touch.clientX - rect.left;
+            y = touch.clientY - rect.top;
+        });
+
+        canvas.addEventListener("touchend", () => {
+            isPressed = false;
+            x = undefined;
+            y = undefined;
+        });
+
+        canvas.addEventListener("touchmove", (e) => {
+            if (isPressed) {
+                let touch = e.touches[0];
+                let rect = canvas.getBoundingClientRect();
+                let x2 = touch.clientX - rect.left;
+                let y2 = touch.clientY - rect.top;
+                drawCircle(x2, y2);
+                drawLine(x, y, x2, y2);
+                x = x2;
+                y = y2;
+            }
+        });
+
+        // Button Actions
         increaseButton.addEventListener("click", () => {
             size += 1;
             if (size > 50) size = 50;
